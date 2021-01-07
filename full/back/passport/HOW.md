@@ -2,8 +2,8 @@
 
 1. 미들웨어등록 (initialize,session)
 2. 로컬전략 만들기
-3. serial,deserial
-4. 사용
+3. serial,deserial 
+4. 사용 .
 
 # 1. 미들웨어등록 (initialize,session)
 ```
