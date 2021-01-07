@@ -1,0 +1,1 @@
+{"ast":null,"code":"export var backAddress = \"http:localhost:3065\";","map":{"version":3,"sources":["C:/WEB/front_next/back.js"],"names":["backAddress"],"mappings":"AAAA,OAAO,IAAMA,WAAW,GAAG,qBAApB","sourcesContent":["export const backAddress = \"http:localhost:3065\";"]},"metadata":{},"sourceType":"module"}
