@@ -64,8 +64,10 @@ router.post("/",async (req,res,next)=>{// POST /user/ //{req:{email,password,nic
 // passport.authenticate(전략종류,로컬전략에서 받은 값을 메게로 한 콜백)
 
 router.post("/login",isNotLoggedIn,(req,res,next)=>{
+    console.log("1.user Login res");
     //authenticate => 전략실행함수 반화
     passport.authenticate("local",(serverError,user,clientError)=>{//전략에서 done함수의 인자(서버에러,유저여부,클라이언트에러)를 받아사용
+        console.log("3. local after function ")
         if(serverError){
             console.error(serverError);
             return next(serverError);
@@ -77,7 +79,7 @@ router.post("/login",isNotLoggedIn,(req,res,next)=>{
 
         //passport 가 실행됨 passport/index.js
         return req.login(user,async (loginErr) => {
-
+            console.log("5. index after function");
             if(loginErr){
                 console.error(loginErr);
                 return next(loginErr);

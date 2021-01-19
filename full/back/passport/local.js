@@ -12,6 +12,8 @@ module.exports = ()=>{
             const user = await User.findOne({
                 where:{email}
             });
+            
+            console.log("2. local function")
             if(!user){//done(error,user,info);
                 return done(null,false,{reason:"존재하지 않는 아이디입니다."});
             }
