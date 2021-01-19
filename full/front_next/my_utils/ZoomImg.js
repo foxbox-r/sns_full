@@ -1,5 +1,6 @@
 import React,{useState,useCallback} from 'react';
 import styled from "styled-components"
+import {backAddress} from "../back"
 
 const BackgroundZoomImg = styled.div`
     display:flex;
@@ -25,7 +26,7 @@ function ZoomImg({images,onZoomToggle}){
 
     return (
         <BackgroundZoomImg onClick={onZoomToggle}>   
-            <img src={images[curIdx].src} onClick={getNextIdx} alt=""/>
+            <img src={`${backAddress}/${images[curIdx].src}`} onClick={getNextIdx} alt=""/>
         </BackgroundZoomImg>
     )
 }

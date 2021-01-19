@@ -1,37 +1,67 @@
-import React,{useState,useCallback} from 'react';
+import React,{useState,useCallback, useEffect} from 'react';
 import {Button, Card,Popover,Avatar,List,Comment} from "antd"
 import {RetweetOutlined,HeartTwoTone,HeartOutlined,MessageOutlined,EllipsisOutlined} from "@ant-design/icons";
 import {useSelector,useDispatch} from "react-redux";
 import PostImages from "../components/PostImages"
 import CommentForm from "../components/CommentForm"
 import PostCardContent from "../components/PostCardContent"
-import {removePostRequestAction} from "../reducers/postReducer"
+import {removePostRequestAction,LIKE_POST_REQUEST,UNLIKE_POST_REQUEST,RETWEET_REQUEST} from "../reducers/postReducer"
 import FollowButton from "./FollowButton"
 
 function PostCard({post}){
 
-    const [liked,setLiked] = useState(false);
     const [commentFormOpened,setCommentFormOpenend] = useState(false);
     const {me} = useSelector(state=>state.userReducer);
-    const {removePostLoading}  = useSelector(state=>state.postReducer);
+    const {removePostLoading,retweetError}  = useSelector(state=>state.postReducer);
     const dispatch = useDispatch();
     const id = me?.id;//  me && me.id 
-    const onToggleLike = useCallback(()=>{
-        setLiked(prev=>!prev);
+
+    // useEffect(()=>{
+    //     if(retweetError){
+    //         alert(retweetError);
+    //     }
+    // },[retweetError])
+
+    const onLike = useCallback(()=>{
+        dispatch({
+            type:LIKE_POST_REQUEST,
+            data:post.id
+        })
     },[])
+
+    const onUnLike = useCallback(()=>{
+        dispatch({
+            type:UNLIKE_POST_REQUEST,
+            data:post.id
+        })
+    },[])
+
+    const liked = post.Likers.find(user => user.id === id);
+
     const onToggleComment = useCallback(()=>{
         setCommentFormOpenend(prev=>!prev);
     },[])
     const onRemovePost = useCallback((id)=>{
         dispatch(removePostRequestAction({id}));
     },[]);
+
+    const onRetweet = useCallback(()=>{
+        if(!id){
+            return alert("로그인하세요.");
+        }
+        return dispatch({
+            type:RETWEET_REQUEST,
+            data:post.id,
+        })
+    },[id])
+
     return (
         <div>
             <Card
                 cover={post.Images[0] && <PostImages images={post.Images}/>}
                 actions={[
-                    <RetweetOutlined key="retweet" />,
-                    (liked ? <HeartTwoTone twoToneColor="#eb2f96"  onClick={onToggleLike} key="heart"/>:<HeartOutlined onClick={onToggleLike} key="heart"/>),
+                    <RetweetOutlined onClick={onRetweet} key="retweet" />,
+                    (liked ? <HeartTwoTone twoToneColor="#eb2f96"  onClick={onUnLike} key="heart"/>:<HeartOutlined onClick={onLike} key="heart"/>),
                     <MessageOutlined key="comment" onClick={onToggleComment} />,
                     <Popover key="more" content={(
                         <Button.Group>
@@ -45,16 +75,24 @@ function PostCard({post}){
                         <EllipsisOutlined />
                     </Popover>
                 ]}
+                title={post.Retweet ? `${post.User.nickname}님이 리트윗했습니다.`:null}
                 extra={id && <FollowButton post={post} />}
             >
-                    <Card.Meta 
-                        avatar={<Avatar>{post.User.nickname[0]}</Avatar>}
-                        title={post.User.nickname}
-                        description={<PostCardContent postData={post.content} />}
-                    />
-                {/* <Image />
-                <Content />
-                <Button></Button> */}
+             {post.RetweetId && post.Retweet?
+             (<Card
+                cover={post.Retweet.Images[0] && <PostImages images={post.Retweet.Images}/>}
+             >
+                <Card.Meta 
+                avatar={<Avatar>{post.Retweet.User.nickname[0]}</Avatar>}
+                title={post.Retweet.User.nickname}
+                description={<PostCardContent postData={post.Retweet.content} />}
+            />
+             </Card>)
+             :(<Card.Meta 
+                avatar={<Avatar>{post.User.nickname[0]}</Avatar>}
+                title={post.User.nickname}
+                description={<PostCardContent postData={post.content} />}
+            />)}
             </Card>
             {commentFormOpened && (
                 <div>

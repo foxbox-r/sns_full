@@ -12,6 +12,7 @@ function CommentForm({post}){
     const id = useSelector(state=>state.userReducer.me?.id);
     const {addCommentDone,addCommentLoading} = useSelector(state=>state.postReducer);
     const [commentText,onChangeCommentText,setText] = useInput("");
+    
     const onSubmitComment = useCallback(()=>{
         console.log(post.id,commentText,id);
         dispatch(addCommentRequestAction({

@@ -22,13 +22,12 @@ function index(){
 
     useEffect(()=>{
         function onScroll(e){
-            // console.log(window.scrollY,document.documentElement.clientHeight,document.documentElement.scrollHeight)
             const result = Math.floor(window.scrollY+document.documentElement.clientHeight)>=document.documentElement.scrollHeight-300;
-            // console.log(Math.floor(window.scrollY+document.documentElement.clientHeight),document.documentElement.scrollHeight-300)
-            // console.log(result);
             if(result && hasMorePosts && !loadPostLoading){
+                const lastId = mainPosts[mainPosts.length-1]?.id;
                 dispatch({
-                    type:LOAD_POST_REQUEST
+                    type:LOAD_POST_REQUEST,
+                    data:lastId,
                 })
             }
         }
@@ -36,7 +35,7 @@ function index(){
         return ()=>{
             window.removeEventListener("scroll",onScroll);
         }
-    },[hasMorePosts,loadPostLoading])
+    },[hasMorePosts,loadPostLoading,mainPosts])
 
     return (
         <>
@@ -45,7 +44,7 @@ function index(){
             </Head>
             <AppLayout>
                 {logInDone && <PostForm />}
-                {mainPosts.map((post,index)=><PostCard key={post.id} post={post} />) }
+                {mainPosts.map((post,index)=><PostCard key={index} post={post} />) }
             </AppLayout>
         </>
     )
