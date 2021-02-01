@@ -5,19 +5,18 @@ import Head from "next/head"
 import PostCard from "../components/PostCard";
 import PostForm from "../components/PostForm"
 import {LOAD_POST_REQUEST} from "../reducers/postReducer"
-import {LOAD_USER_REQUEST} from "../reducers/userReducer"
+import {LOAD_MY_INFO_REQUEST} from "../reducers/userReducer"
+import wrapper from "../store/configureStore"
+import {END} from "redux-saga"
+import axios from "axios";
+
 function index(){
     const {logInDone} = useSelector(state=>state.userReducer);
     const dispatch = useDispatch();
     const {mainPosts,hasMorePosts,loadPostLoading} = useSelector(state=>state.postReducer);
 
     useEffect(()=>{
-        dispatch({
-            type:LOAD_USER_REQUEST,
-        })
-        dispatch({
-            type:LOAD_POST_REQUEST,
-        });
+       
     },[]);
 
     useEffect(()=>{
@@ -49,5 +48,24 @@ function index(){
         </>
     )
 }
+
+// index 콤포넌트보다 앞에 실행 됨 browser => client_server(현재) and (쿠기없음) => back_server
+// 쿠키는 브라우저가 넣는데 client_server에서는 쿠키가 없음
+export const getServerSideProps = wrapper.getServerSideProps(async (context)=>{
+    const cookie = context.req ? context.req.headers.cookie : "";
+    axios.defaults.headers.Cookie = "";
+    if(context.req && cookie){
+        axios.defaults.headers.Cookie = cookie; // 쿠키 넣기
+    }
+    context.store.dispatch({
+        type:LOAD_MY_INFO_REQUEST,
+    })
+    context.store.dispatch({
+        type:LOAD_POST_REQUEST,
+    });
+
+    context.store.dispatch(END); // 사용법 request success 기다리기
+    await context.store.sagaTask.toPromise(); // 사용법 configureStore.js 에서 등록한 sgagTask 를 사용
+});
 
 export default index;

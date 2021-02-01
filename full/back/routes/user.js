@@ -5,8 +5,9 @@ const bcrypt =  require("bcrypt");
 const passport = require("passport");
 const {isLoggedIn,isNotLoggedIn} = require("./middlewares")
 
-// load user
+// load my info
 router.get("/",async (req,res,next)=>{
+    console.log(req.headers);
     try{
         if(req.user){
             const user = await User.findOne({
@@ -27,10 +28,46 @@ router.get("/",async (req,res,next)=>{
                     attributes:["id"],
                 }]
             });
-            console.log("load user",user);
             res.status(200).json(user);
         }else{
             res.status(200).json(null);
+        }
+    } catch(error){
+        console.error(error);
+        next(error);
+    }
+})
+// load user
+router.get("/:UserId",async (req,res,next)=>{
+    try{
+        const fullUserWithoutPassword = await User.findOne({
+            where:{id:parseInt(req.params.UserId)},
+            attributes:{
+                exclude:["password"],
+            },
+            include:[{
+                model:Post,
+                attributes:["id"],
+            },{
+                model:User,
+                as:"Followings",
+                attributes:["id"],
+            },{
+                model:User,
+                as:"Followers",
+                attributes:["id"],
+            }]
+        });
+        if(fullUserWithoutPassword){
+            const data = fullUserWithoutPassword.toJSON(); //json 변환
+            // Posts,Followings,Followers 의 {id} 조차도 개인정보의 문제가 있을수 있으므로 개수만 넘김
+            data.Posts = data.Posts.length;
+            data.Followings = data.Followings.length;
+            data.Followers = data.Followers.length;
+            
+            res.status(200).json(data);
+        } else{
+            res.status(404).send("존재하지 않는 아이디 입니다.");
         }
     } catch(error){
         console.error(error);

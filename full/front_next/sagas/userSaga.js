@@ -7,6 +7,7 @@ import {
     FOLLOW_REQUEST,FOLLOW_SUCCESS,FOLLOW_ERROR,
     UNFOLLOW_REQUEST,UNFOLLOW_SUCCESS,UNFOLLOW_ERROR,
     LOAD_USER_REQUEST,LOAD_USER_SUCCESS,LOAD_USER_ERROR,
+    LOAD_MY_INFO_REQUEST,LOAD_MY_INFO_SUCCESS,LOAD_MY_INFO_ERROR,
     CHANGE_USER_REQUEST,CHANGE_USER_SUCCESS,CHANGE_USER_ERROR,
     LOAD_FOLLOWERS_REQUEST,LOAD_FOLLOWERS_SUCCESS,LOAD_FOLLOWERS_ERROR,
     LOAD_FOLLOWINGS_REQUEST,LOAD_FOLLOWINGS_SUCCESS,LOAD_FOLLOWINGS_ERROR,
@@ -15,15 +16,14 @@ import {
 import axios from "axios"
 import {backAddress} from "../back"
 
-function loadUserApi(){
-    return axios.get(`/user`);
+function loadUserApi(data){
+    return axios.get(`/user/${data}`);
 }
 
 function* loadUser(action){
     try{
-        const result = yield call(loadUserApi);
+        const result = yield call(loadUserApi,action.data);
         console.log(result);
-        yield delay(1000);
         yield put({
             type:LOAD_USER_SUCCESS,
             data:result.data,
@@ -32,6 +32,29 @@ function* loadUser(action){
         yield put({
             type:LOAD_USER_ERROR,
             data:err.response.data
+        });
+    }
+}
+
+function loadMyInfoApi(){
+    return axios.get(`/user`);
+}
+
+function* loadMyInfo(action){
+    try{
+        const result = yield call(loadMyInfoApi);
+        console.log(result);
+        yield put({
+            type:LOAD_MY_INFO_SUCCESS,
+            data:result.data,
+        });
+    } catch(err){
+        console.log("===============");
+        console.log(axios.defaults.headers);
+        console.error(err);
+        yield put({
+            type:LOAD_MY_INFO_ERROR,
+            data:err.response.data,
         });
     }
 }
@@ -63,7 +86,6 @@ function logOutApi(){
 function* logOut(action){
     try{
         yield call(logOutApi);
-        yield delay(1000);
         yield put({
             type:LOG_OUT_SUCCESS
         });
@@ -244,6 +266,9 @@ function* watchLoadFollowings(){
 function* watchRemoveFollower(){
     yield takeEvery(REMOVE_FOLLOWER_REQUEST,removeFollower);
 }
+function* watchLoadMyInfo(){
+    yield takeEvery(LOAD_MY_INFO_REQUEST,loadMyInfo);
+}
 
 export default function* userSaga(){
     yield all([
@@ -257,5 +282,6 @@ export default function* userSaga(){
         fork(watchLoadFollowers),
         fork(watchLoadFollowings),
         fork(watchRemoveFollower),
+        fork(watchLoadMyInfo),
     ])
 }

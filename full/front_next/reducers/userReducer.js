@@ -23,6 +23,12 @@ const initialState = {
     loadUserLoading:false,
     loadUserDone:false,
     loadUserError:null,
+    
+    loadMyInfoLoading:false,
+    loadMyInfoDone:false,
+    loadMyInfoError:null,
+
+    userInfo:null,
 
     changeUserLoading:false,
     changeUserDone:false,
@@ -73,6 +79,10 @@ export const LOAD_USER_REQUEST = "postReducer/LOAD_USER_REQUEST";
 export const LOAD_USER_SUCCESS = "postReducer/LOAD_USER_SUCCESS";
 export const LOAD_USER_ERROR = "postReducer/LOAD_USER_ERROR";
 
+export const LOAD_MY_INFO_REQUEST = "postReducer/LOAD_MY_INFO_REQUEST";
+export const LOAD_MY_INFO_SUCCESS = "postReducer/LOAD_MY_INFO_SUCCESS";
+export const LOAD_MY_INFO_ERROR = "postReducer/LOAD_MY_INFO_ERROR";
+
 export const CHANGE_USER_REQUEST = "postReducer/CHANGE_USER_REQUEST";
 export const CHANGE_USER_SUCCESS = "postReducer/CHANGE_USER_SUCCESS";
 export const CHANGE_USER_ERROR = "postReducer/CHANGE_USER_ERROR";
@@ -88,6 +98,8 @@ export const LOAD_FOLLOWINGS_ERROR = "postReducer/LOAD_FOLLOWINGS_ERROR";
 export const REMOVE_FOLLOWER_REQUEST = "postReducer/REMOVE_FOLLOWER_REQUEST";
 export const REMOVE_FOLLOWER_SUCCESS = "postReducer/REMOVE_FOLLOWER_SUCCESS";
 export const REMOVE_FOLLOWER_ERROR = "postReducer/REMOVE_FOLLOWER_ERROR";
+
+
 
 export const logoutRequestAction = ()=>({
     type:LOG_OUT_REQUEST
@@ -195,19 +207,32 @@ const userReducer = (state=initialState,action)=>{
                 draft.me.Posts = draft.me.Posts.filter(post=>post.id !== action.data.postId); 
                 break;
             
-            case LOAD_USER_REQUEST://data:loadUserApi().data
+            case LOAD_USER_REQUEST://data:loadMyInfoApi().data
                 draft.loadUserLoading = true;
                 draft.loadUserErorr = null;
                 break;
             case LOAD_USER_SUCCESS:
-                console.log("user",action.data);
                 draft.loadUserDone = true;
                 draft.loadUserLoading = false;
-                draft.me = action.data;
+                draft.userInfo = action.data;
                 break;
             case LOAD_USER_ERROR:
                 draft.loadUserLoading = false;
                 draft.loadUserError = action.data;
+                break;
+
+            case LOAD_MY_INFO_REQUEST://data:loadMyInfoApi().data
+                draft.loadMyInfoLoading = true;
+                draft.loadMyInfoErorr = null;
+                break;
+            case LOAD_MY_INFO_SUCCESS:
+                draft.loadMyInfoDone = true;
+                draft.loadMyInfoLoading = false;
+                draft.me = action.data;
+                break;
+            case LOAD_MY_INFO_ERROR:
+                draft.loadMyInfoLoading = false;
+                draft.loadMyInfoError = action.data;
                 break;
 
             case CHANGE_USER_REQUEST://data:changeUserApi().data

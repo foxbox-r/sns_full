@@ -8,6 +8,11 @@ import {useDispatch,useSelector} from "react-redux"
 import {signupRequestAction} from "../reducers/userReducer"
 import { useRouter } from 'next/router';
 
+import {END} from "redux-saga"
+import axios from "axios";
+import wrapper from "../store/configureStore"
+import {LOAD_MY_INFO_REQUEST} from "../reducers/userReducer"
+
 const ErrMsg = styled.div`
     color:red;
 `
@@ -104,5 +109,19 @@ function Signup(){
         </>
     )
 }
+
+export const getServerSideProps = wrapper.getServerSideProps(async (context)=>{
+    const cookie = context.req ? context.req.headers.cookie : "";
+    axios.defaults.headers.Cookie = "";
+    if(context.req && cookie){
+        axios.defaults.headers.Cookie = cookie; // 쿠키 넣기
+    }
+    context.store.dispatch({
+        type:LOAD_MY_INFO_REQUEST,
+    })
+
+    context.store.dispatch(END); // 사용법 request success 기다리기
+    await context.store.sagaTask.toPromise(); // 사용법 configureStore.js 에서 등록한 sgagTask 를 사용
+});
 
 export default Signup;
