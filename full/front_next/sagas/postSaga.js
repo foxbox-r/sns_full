@@ -5,6 +5,9 @@ import {
     ADD_POST_REQUEST,ADD_POST_SUCCESS,ADD_POST_ERROR,
     REMOVE_POST_REQUEST,REMOVE_POST_SUCCESS,REMOVE_POST_ERROR,
      ADD_COMMENT_REQUEST,ADD_COMMENT_SUCCESS,ADD_COMMENT_ERROR,
+     LOAD_POSTS_REQUEST,LOAD_POSTS_SUCCESS,LOAD_POSTS_ERROR,
+     LOAD_USER_POSTS_REQUEST,LOAD_USER_POSTS_SUCCESS,LOAD_USER_POSTS_ERROR,
+     LOAD_HASHTAG_POSTS_REQUEST,LOAD_HASHTAG_POSTS_SUCCESS,LOAD_HASHTAG_POSTS_ERROR,
      LOAD_POST_REQUEST,LOAD_POST_SUCCESS,LOAD_POST_ERROR,
      LIKE_POST_REQUEST,LIKE_POST_SUCCESS,LIKE_POST_ERROR,
      UNLIKE_POST_REQUEST,UNLIKE_POST_SUCCESS,UNLIKE_POST_ERROR,
@@ -19,7 +22,6 @@ import {
 import axios from "axios";
  
 function addPostApi(data){ //data:formData : formData는 {}안 감싸고 그냥 넣는다
-    console.log("api");
     return axios.post("/post",data);
 }
 
@@ -63,12 +65,71 @@ function* addComment(action){//(data:{postId,content,userId})
     }
 }
 
-function loadPostApi(data){
+function loadPostsApi(data){
     // get 방식은 두번째 인자에 data가 못들어감 그래서 쿼리 스트링으로해야함
     return axios.get(`/posts?lastId=${data || 0}&limit=10`);
 }
 
-function* loadPost(action){//{data:lastId}
+function* loadPosts(action){//{data:lastId}
+    try{
+        const result = yield call(loadPostsApi,action.data);
+        yield put({
+            type:LOAD_POSTS_SUCCESS,
+            data:result.data
+        })
+    } catch(err){
+        yield put({
+            type:LOAD_POSTS_ERROR,
+            data:err
+        })
+    }
+}
+
+function loadUserPostsApi(data){
+    // get 방식은 두번째 인자에 data가 못들어감 그래서 쿼리 스트링으로해야함
+    return axios.get(`/user/${data.UserId}/posts?lastId=${data.lastId || 0}&limit=10`);
+}
+
+function* loadUserPosts(action){//{data:{UserId,lastId or undeifined}}
+    try{
+        const result = yield call(loadUserPostsApi,action.data);
+        yield put({
+            type:LOAD_USER_POSTS_SUCCESS,
+            data:result.data
+        })
+    } catch(err){
+        yield put({
+            type:LOAD_USER_POSTS_ERROR,
+            data:err
+        })
+    }
+}
+
+function loadHashtagPostsApi(data){
+    // get 방식은 두번째 인자에 data가 못들어감 그래서 쿼리 스트링으로해야함
+    return axios.get(`/hashtag/${encodeURIComponent(data.tag)}/posts?lastId=${data.lastId || 0}&limit=10`);
+}
+
+function* loadHashtagPosts(action){//{data:{tag,lastId}}
+    try{
+        const result = yield call(loadHashtagPostsApi,action.data);
+        yield put({
+            type:LOAD_HASHTAG_POSTS_SUCCESS,
+            data:result.data
+        })
+    } catch(err){
+        yield put({
+            type:LOAD_HASHTAG_POSTS_ERROR,
+            data:err
+        })
+    }
+}
+
+function loadPostApi(data){
+    return axios.get(`/post/${data}`);
+}
+
+function* loadPost(action){//{data:PostId}
     try{
         const result = yield call(loadPostApi,action.data);
         yield put({
@@ -189,6 +250,16 @@ function* watchAddComment(){
     yield takeEvery(ADD_COMMENT_REQUEST,addComment)
 }
 
+function* watchLoadPosts(){
+    yield takeEvery(LOAD_POSTS_REQUEST,loadPosts);
+}
+
+function* watchLoadUserPosts(){
+    yield takeEvery(LOAD_USER_POSTS_REQUEST,loadUserPosts);
+}
+function* watchLoadHashtagPosts(){
+    yield takeEvery(LOAD_HASHTAG_POSTS_REQUEST,loadHashtagPosts);
+}
 function* watchLoadPost(){
     yield takeEvery(LOAD_POST_REQUEST,loadPost);
 }
@@ -215,6 +286,9 @@ export default function* postSaga(){
         fork(watchAddPost),
         fork(watchAddComment),
         fork(watchRemovePost),
+        fork(watchLoadPosts),
+        fork(watchLoadUserPosts),
+        fork(watchLoadHashtagPosts),
         fork(watchLoadPost),
         fork(watchLikePost),
         fork(watchUnLikePost),

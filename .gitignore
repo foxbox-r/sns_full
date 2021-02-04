@@ -2,3 +2,7 @@
 /full/back/node_modules
 /full/front_next/node_modules
 /--
+react-nodebird.pem
+node_modules
+.env
+.next

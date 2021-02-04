@@ -240,4 +240,55 @@ router.post("/:postId/retweet",isLoggedIn,async (req,res,next)=>{  // /post/:pos
     }   
 })
 
+router.get("/:PostId",isLoggedIn, async (req,res,next)=>{
+    try{
+        const post = await Post.findOne({
+            where:{id:parseInt(req.params.PostId)},
+        });
+
+        if(!post){
+            return res.status(400).send("존재하지 않는 게시글입니다.");
+        }
+
+       const fullPost = await Post.findOne({
+           where:{id:post.id},
+           order:[
+                ["createdAt","DESC"],
+                [Comment,"createdAt","DESC"]
+            ],
+            include:[{
+                model:Post,
+                as:"Retweet",
+                include:[{
+                    model:User,
+                    attributes:["id","nickname"]
+                },{
+                    model:Image
+                }]
+            },{
+                model:User,
+                attributes:["id","nickname"]
+            },{
+                model:Image,
+            },{
+                model:Comment,
+                include:[{
+                    model:User,
+                    attributes:["id","nickname"]
+                }]
+            },{
+                model:User,
+                as:"Likers",
+                attributes:["id"]
+            }]
+        });
+
+        return res.status(200).json(fullPost);
+
+    } catch(error){
+        console.error(error);
+        return next(error);
+    }
+});
+
 module.exports = router;

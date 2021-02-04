@@ -1,6 +1,7 @@
 const postRouter = require("./routes/post");
 const userRouter = require("./routes/user");
 const postsRouter = require("./routes/posts");
+const hashtagRouter = require("./routes/hashtag");
 
 const express = require("express");
 const cors = require("cors");
@@ -74,6 +75,7 @@ app.get('/api',(req,res)=>{
 app.use("/posts",postsRouter);
 app.use("/post",postRouter);
 app.use("/user",userRouter);
+app.use("/hashtag",hashtagRouter);
 
 app.listen(port,()=>{
     console.log("==============================");console.log("");

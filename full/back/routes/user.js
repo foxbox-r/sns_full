@@ -1,9 +1,10 @@
 const router = require("express").Router();
 const db = require("../models");
-const {User,Post} = db;
+const {User,Post,Comment,Image} = db;
 const bcrypt =  require("bcrypt");
 const passport = require("passport");
-const {isLoggedIn,isNotLoggedIn} = require("./middlewares")
+const {isLoggedIn,isNotLoggedIn} = require("./middlewares");
+const {Op} = require("sequelize");
 
 // load my info
 router.get("/",async (req,res,next)=>{
@@ -31,43 +32,6 @@ router.get("/",async (req,res,next)=>{
             res.status(200).json(user);
         }else{
             res.status(200).json(null);
-        }
-    } catch(error){
-        console.error(error);
-        next(error);
-    }
-})
-// load user
-router.get("/:UserId",async (req,res,next)=>{
-    try{
-        const fullUserWithoutPassword = await User.findOne({
-            where:{id:parseInt(req.params.UserId)},
-            attributes:{
-                exclude:["password"],
-            },
-            include:[{
-                model:Post,
-                attributes:["id"],
-            },{
-                model:User,
-                as:"Followings",
-                attributes:["id"],
-            },{
-                model:User,
-                as:"Followers",
-                attributes:["id"],
-            }]
-        });
-        if(fullUserWithoutPassword){
-            const data = fullUserWithoutPassword.toJSON(); //json 변환
-            // Posts,Followings,Followers 의 {id} 조차도 개인정보의 문제가 있을수 있으므로 개수만 넘김
-            data.Posts = data.Posts.length;
-            data.Followings = data.Followings.length;
-            data.Followers = data.Followers.length;
-            
-            res.status(200).json(data);
-        } else{
-            res.status(404).send("존재하지 않는 아이디 입니다.");
         }
     } catch(error){
         console.error(error);
@@ -168,6 +132,106 @@ router.patch("/nickname",isLoggedIn,async (req,res,next)=>{
     }
 })
 
+router.get("/followers",isLoggedIn,async (req,res,next)=>{
+    try{
+        const me = await User.findOne({where:{id:req.user.id}});
+        if(!me){
+            res.status(403).send("me 없음")
+        }
+        const followers = await me.getFollowers(
+            {
+                limit:parseInt(req.query.limit),
+            }
+        );
+        res.status(200).json(followers)
+    } catch(error){
+        console.error(error);
+        next(error);
+    }
+})
+
+router.get("/followings",isLoggedIn,async (req,res,next)=>{
+    try{
+
+        const me = await User.findOne({where:{id:req.user.id}})
+
+        if(!me){
+            res.status(403).send("me 없음")
+        }
+        const getFollowings = await me.getFollowings(
+            {
+                limit:parseInt(req.query.limit),
+            }
+        );
+        res.status(200).json(getFollowings)
+    } catch(error){
+        console.error(error);
+        next(error);
+    }
+})
+
+router.delete("/follower/:userId",isLoggedIn,async (req,res,next)=>{
+    try{    // 차단할 유저
+        const user = await User.findOne({where:{id:req.params.userId}})
+        if(!user){
+            res.status(403).send("user 없음")
+        }
+        await user.removeFollowings(req.user.id);   // 유저가 날 언팔로우 함
+        res.status(200).json({userId:parseInt(req.params.userId)})
+    } catch(error){
+        console.error(error);
+        next(error);
+    }
+})
+
+router.get('/:UserId/posts',async (req,res,next)=>{    // GET /user/:UserId/posts
+    try{
+        const where = {UserId:parseInt(req.params.UserId)};
+        if(parseInt(req.query.lastId)){   // 0이 아닐때 ,초기로딩이 아닐 때
+            // [Op.lt] 보다 작은 (where id < lastId)
+            where.id = {[Op.lt]:parseInt(req.query.lastId)}
+        }; // 내림차순 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1
+        const posts = await Post.findAll({
+            where,
+            limit:10,   // 가져오는 개수    
+            order:[
+                ["createdAt","DESC"],
+                [Comment,"createdAt","DESC"]
+            ],
+            include:[{
+                model:Post,
+                as:"Retweet",
+                include:[{
+                    model:User,
+                    attributes:["id","nickname"]
+                },{
+                    model:Image
+                }]
+            },{
+                model:User,
+                attributes:["id","nickname"]
+            },{
+                model:Image,
+            },{
+                model:Comment,
+                include:[{
+                    model:User,
+                    attributes:["id","nickname"]
+                }]
+            },{
+                model:User,
+                as:"Likers",
+                attributes:["id"]
+            }]
+        });
+        res.status(200).json(posts);
+    } catch(error){
+        console.error(error);
+        next(error);
+    }
+})
+
+
 router.patch("/:userId/follow",isLoggedIn,async (req,res,next)=>{
     try{
         const user = await User.findOne({where:{id:req.params.userId}})
@@ -196,46 +260,42 @@ router.delete("/:userId/follow",isLoggedIn,async (req,res,next)=>{
     }
 })
 
-router.get("/followers",isLoggedIn,async (req,res,next)=>{
+// load user
+router.get("/:UserId",async (req,res,next)=>{
     try{
-        const me = await User.findOne({where:{id:req.user.id}})
-        if(!me){
-            res.status(403).send("me 없음")
+        const fullUserWithoutPassword = await User.findOne({
+            where:{id:parseInt(req.params.UserId)},
+            attributes:{
+                exclude:["password"],
+            },
+            include:[{
+                model:Post,
+                attributes:["id"],
+            },{
+                model:User,
+                as:"Followings",
+                attributes:["id"],
+            },{
+                model:User,
+                as:"Followers",
+                attributes:["id"],
+            }]
+        });
+        if(fullUserWithoutPassword){
+            const data = fullUserWithoutPassword.toJSON(); //json 변환
+            // Posts,Followings,Followers 의 {id} 조차도 개인정보의 문제가 있을수 있으므로 개수만 넘김
+            data.Posts = data.Posts.length;
+            data.Followings = data.Followings.length;
+            data.Followers = data.Followers.length;
+            
+            res.status(200).json(data);
+        } else{
+            res.status(404).send("존재하지 않는 아이디 입니다.");
         }
-        const followers = await me.getFollowers();
-        res.status(200).json(followers)
     } catch(error){
         console.error(error);
         next(error);
     }
-})
-
-router.get("/followings",isLoggedIn,async (req,res,next)=>{
-    try{
-        const me = await User.findOne({where:{id:req.user.id}})
-        if(!me){
-            res.status(403).send("me 없음")
-        }
-        const getFollowings = await me.getFollowings();
-        res.status(200).json(getFollowings)
-    } catch(error){
-        console.error(error);
-        next(error);
-    }
-})
-
-router.delete("/follower/:userId",isLoggedIn,async (req,res,next)=>{
-    try{    // 차단할 유저
-        const user = await User.findOne({where:{id:req.params.userId}})
-        if(!user){
-            res.status(403).send("user 없음")
-        }
-        await user.removeFollowings(req.user.id);   // 유저가 날 언팔로우 함
-        res.status(200).json({userId:parseInt(req.params.userId)})
-    } catch(error){
-        console.error(error);
-        next(error);
-    }
-})
+});
 
 module.exports = router;

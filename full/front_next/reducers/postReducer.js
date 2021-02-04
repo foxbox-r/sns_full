@@ -5,15 +5,25 @@ import faker from "faker"
 const initialState = {
     mainPosts:[],
     imagePaths:[],
+    singlePost:null,
 
     addPostDone:false,
     addPostLoading:false,
     addPostError:null,
 
+    loadPostsDone:false,
+    loadPostsLoading:false,
+    loadPostsError:null,
+    hasMorePosts:true,
+
+    
+    loadUserPostsDone:false,
+    loadUserPostsLoading:false,
+    loadUserPostsError:null,
+
     loadPostDone:false,
     loadPostLoading:false,
     loadPostError:null,
-    hasMorePosts:true,
 
     removePostDone:false,
     removePostLoading:false,
@@ -79,6 +89,14 @@ export const ADD_COMMENT_REQUEST = "postReducer/ADD_COMMENT_REQUEST";
 export const ADD_COMMENT_SUCCESS = "postReducer/ADD_COMMENT_SUCCESS";
 export const ADD_COMMENT_ERROR = "postReducer/ADD_COMMENT_ERROR";
 
+export const LOAD_POSTS_REQUEST = "postReducer/LOAD_POSTS_REQUEST";
+export const LOAD_POSTS_SUCCESS = "postReducer/LOAD_POSTS_SUCCESS";
+export const LOAD_POSTS_ERROR = "postReducer/LOAD_POSTS_ERROR";
+
+export const LOAD_USER_POSTS_REQUEST = "postReducer/LOAD_USER_POSTS_REQUEST";
+export const LOAD_USER_POSTS_SUCCESS = "postReducer/LOAD_USER_POSTS_SUCCESS";
+export const LOAD_USER_POSTS_ERROR = "postReducer/LOAD_USER_POSTS_ERROR";
+
 export const LOAD_POST_REQUEST = "postReducer/LOAD_POST_REQUEST";
 export const LOAD_POST_SUCCESS = "postReducer/LOAD_POST_SUCCESS";
 export const LOAD_POST_ERROR = "postReducer/LOAD_POST_ERROR";
@@ -100,6 +118,10 @@ export const REMOVE_IMAGE = "postReducer/REMOVE_IMAGE"
 export const RETWEET_REQUEST = "postReducer/RETWEET_REQUEST";
 export const RETWEET_SUCCESS = "postReducer/RETWEET_SUCCESS";
 export const RETWEET_ERROR = "postReducer/RETWEET_ERROR";
+
+export const LOAD_HASHTAG_POSTS_REQUEST = "postReducer/LOAD_HASHTAG_POSTS_REQUEST";
+export const LOAD_HASHTAG_POSTS_SUCCESS = "postReducer/LOAD_HASHTAG_POSTS_SUCCESS";
+export const LOAD_HASHTAG_POSTS_ERROR = "postReducer/LOAD_HASHTAG_POSTS_ERROR";
 
 export const addPostRequestAction = data =>({//({postContent})
     type:ADD_POST_REQUEST,
@@ -179,16 +201,37 @@ const postReducer = (state=initialState,action)=>{
                 draft.addCommentError = action.data;
                 break;
 
+            case LOAD_POSTS_REQUEST:
+            case LOAD_USER_POSTS_REQUEST:
+            case LOAD_USER_POSTS_REQUEST:
+                draft.loadPostsLoading = true;
+                draft.loadPostsDone = false;
+                draft.loadPostsError = null;
+                break;
+            case LOAD_POSTS_SUCCESS://data:loadPostsApi().data
+            case LOAD_USER_POSTS_SUCCESS://data:loadUserPostsApi().data
+            case LOAD_HASHTAG_POSTS_SUCCESS://data:loadHashtagPostsApi().data
+                draft.mainPosts = draft.mainPosts.concat(action.data);
+                draft.hasMorePosts = action.data.length === 10; // 10개씩 게시글을 가져오므로 10 미만일때 false 
+                draft.loadPostsLoading = false;
+                draft.loadPostsDone = true;
+                break;
+            case LOAD_USER_POSTS_ERROR:
+            case LOAD_HASHTAG_POSTS_ERROR:
+            case LOAD_POSTS_ERROR:
+                draft.loadPostsLoading = false;
+                draft.loadPostsError = action.data;
+                break;
+
             case LOAD_POST_REQUEST:
                 draft.loadPostLoading = true;
                 draft.loadPostDone = false;
                 draft.loadPostError = null;
                 break;
-            case LOAD_POST_SUCCESS://data:loadPostApi().data
-                draft.mainPosts = draft.mainPosts.concat(action.data);
-                draft.hasMorePosts = action.data.length === 10; // 10개씩 게시글을 가져오므로 10 미만일때 false 
+            case LOAD_POST_SUCCESS://{data:loadPostApi().data}
                 draft.loadPostLoading = false;
                 draft.loadPostDone = true;
+                draft.singlePost = action.data;
                 break;
             case LOAD_POST_ERROR:
                 draft.loadPostLoading = false;
@@ -201,7 +244,6 @@ const postReducer = (state=initialState,action)=>{
                 draft.likePostError = null;
                 break;
             case LIKE_POST_SUCCESS:{//{data:{postId,UserId}}
-                console.log("=========",draft.mainPosts)
                 draft.likePostLoading = false;
                 draft.likePostDone = true;
                 const post = draft.mainPosts.find(post=>post.id === action.data.postId)

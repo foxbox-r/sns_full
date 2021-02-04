@@ -23,7 +23,6 @@ function loadUserApi(data){
 function* loadUser(action){
     try{
         const result = yield call(loadUserApi,action.data);
-        console.log(result);
         yield put({
             type:LOAD_USER_SUCCESS,
             data:result.data,
@@ -43,14 +42,11 @@ function loadMyInfoApi(){
 function* loadMyInfo(action){
     try{
         const result = yield call(loadMyInfoApi);
-        console.log(result);
         yield put({
             type:LOAD_MY_INFO_SUCCESS,
             data:result.data,
         });
     } catch(err){
-        console.log("===============");
-        console.log(axios.defaults.headers);
         console.error(err);
         yield put({
             type:LOAD_MY_INFO_ERROR,
@@ -105,7 +101,6 @@ function signUpApi(data){
 function* signUp(action){//{data:{email,password,nickname}}
     try{
         const result = yield call(signUpApi,action.data);
-        console.log(result);
         yield delay(1000);
         yield put({
             type:SIGN_UP_SUCCESS,
